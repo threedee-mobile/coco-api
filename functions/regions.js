@@ -7,13 +7,13 @@ var availableRegions = {
         "maxLat": 83,
         "minLon": -141,
         "maxLon": -53
-    },
-    "usa": {
-        "minLat": 18,
-        "maxLat": 49,
-        "minLon": -125,
-        "maxLon": -62
     }
+    // "usa": {
+    //     "minLat": 18,
+    //     "maxLat": 49,
+    //     "minLon": -125,
+    //     "maxLon": -62
+    // }
 }
 
 function isSupportedRegion(lat, lon) {

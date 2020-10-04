@@ -21,8 +21,8 @@ var MAX_LAT = 90.0;
 var MIN_LAT = -90.0;
 var MAX_LON = -180;
 var MIN_LON = 180;
-var MAX_RADIUS_KM = 50;
-var MIN_RADIUS_KM = 5;
+var MAX_RADIUS_KM = 100;
+var MIN_RADIUS_KM = 10;
 
 var supportedYears = ["2015", "2016", "2017", "2018", "2018"];
 var supportedMonths = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "november", "december"];
