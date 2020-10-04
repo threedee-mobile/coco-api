@@ -45,6 +45,7 @@ function deg2rad(deg) {
 apiV1.get('/data', (request, response) => {
 	console.log('QUERY', (typeof request.query.month) + " -> " + supportedMonths.includes(request.query.month));
 
+
 	// VERIFY API KEY
 	var apiKey = request.header(auth.headerApiKey);
 	if (!auth.isApiKeyValid(apiKey)) {
