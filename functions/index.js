@@ -4,6 +4,7 @@ const firebaseAdmin = require('firebase-admin');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const common = require('./common');
+const regions = require('./regions');
 const auth = require('./auth');
 
 firebaseAdmin.initializeApp();
@@ -14,6 +15,8 @@ apiV1.use(bodyParser.urlencoded({ extended: true }));
 
 var EARTH_RADIUS_KM = 6371;
 
+var MAX_YEAR = 2018;
+var MIN_YEAR = 2016;
 var MAX_LAT = 90.0;
 var MIN_LAT = -90.0;
 var MAX_LON = -180;
@@ -45,7 +48,6 @@ function deg2rad(deg) {
 apiV1.get('/data', (request, response) => {
 	console.log('QUERY', (typeof request.query.month) + " -> " + supportedMonths.includes(request.query.month));
 
-
 	// VERIFY API KEY
 	var apiKey = request.header(auth.headerApiKey);
 	if (!auth.isApiKeyValid(apiKey)) {
@@ -68,7 +70,7 @@ apiV1.get('/data', (request, response) => {
 			yearParam = parseInt(request.query.year);
 		} else {
 			isQueryValid = false;
-			common.sendError(response, 400, "400.001", "Invalid query: year (int) is required and must be 2018 <= year <= 2019")
+			common.sendError(response, 400, "400.001", "Invalid query: year (int) is required and must be " + MIN_YEAR + " <= year <= " + MAX_YEAR)
 			return;
 		}
 
@@ -76,7 +78,7 @@ apiV1.get('/data', (request, response) => {
 			monthParam = request.query.month;
 		} else {
 			isQueryValid = false;
-			common.sendError(response, 400, "400.002", "Invalid query: month (str) is required and must be full name, all lowercase")
+			common.sendError(response, 400, "400.002", "Invalid query: month (str) is required and must be the proper name, all lowercase")
 			return;
 		}
 
@@ -95,7 +97,7 @@ apiV1.get('/data', (request, response) => {
 				latParam = request.query.latitude;
 			} else {
 				isQueryValid = false;
-				common.sendError(response, 400, "400.004", "Invalid query: latitude (degrees) must be " + MIN_LAT + " <= radius <= " + MAX_LAT)
+				common.sendError(response, 400, "400.004", "Invalid query: latitude (degrees) must be " + MIN_LAT + " <= latitude <= " + MAX_LAT)
 			}
 		}
 
@@ -104,7 +106,7 @@ apiV1.get('/data', (request, response) => {
 				lonParam = request.query.longitude;
 			} else {
 				isQueryValid = false;
-				common.sendError(response, 400, "400.005", "Invalid query: longitude (degrees) must be " + MIN_LAT + " <= radius <= " + MAX_LAT)
+				common.sendError(response, 400, "400.005", "Invalid query: longitude (degrees) must be " + MIN_LAT + " <= longitude <= " + MAX_LAT)
 			}
 		}
 
@@ -116,6 +118,11 @@ apiV1.get('/data', (request, response) => {
 		if (latParam !== Number.MIN_SAFE_INTEGER && lonParam === Number.MIN_SAFE_INTEGER) {
 				isQueryValid = false;
 				common.sendError(response, 400, "400.007", "Invalid query: longitude is required if latitude is provided")
+		}
+
+		if (!regions.isSupportedRegion(latParam, lonParam)) {
+				isQueryValid = false;
+				common.sendError(response, 422, "422.001", "The provided latitude and longitude does not fall within a supported region")
 		}
 
 		if (isQueryValid) {
