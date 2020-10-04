@@ -203,7 +203,10 @@ apiV1.get('/encryptApiKey', (request, response) => {
 	}
 });
 
-const v1 = firebaseFunctions.https.onRequest(apiV1);
+const v1 = firebaseFunctions
+	.runWith({ memory: '1GB', timeoutSeconds: 30 })
+	.https
+	.onRequest(apiV1);
 
 module.exports = {
 	v1
