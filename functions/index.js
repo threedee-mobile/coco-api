@@ -131,9 +131,10 @@ apiV1.get('/data', (request, response) => {
 			var result = {};
 			var foundMatch = false;
 
-			data.forEach((item) => {
-				var year = item.year;
-				if (!foundMatch && yearParam === year) {
+			try {
+				data.forEach((item) => {
+					var year = item.year;
+					if (!foundMatch && yearParam === year) {
 						item.monthlyData.forEach((monthItem) => {
 							var month = monthItem.month;
 							if (monthParam === month) {
@@ -158,9 +159,12 @@ apiV1.get('/data', (request, response) => {
 									}							  
 							}
 						});
-				}
-			});
-
+					}
+				});
+			} catch {
+				sendError(response, 500, "500.002", "Internal error")
+			}
+		
 			sendSuccess(response, result);
 		}, 
 		function (error) {
