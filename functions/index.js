@@ -13,7 +13,7 @@ const apiV1 = express();
 
 apiV1.use(bodyParser.urlencoded({ extended: true }));
 
-var EARTH_RADIUS_KM = 6371;
+var EARTH_RADIUS_KM = 6371.0;
 
 var MAX_YEAR = 2018;
 var MIN_YEAR = 2016;
@@ -21,7 +21,7 @@ var MAX_LAT = 90.0;
 var MIN_LAT = -90.0;
 var MAX_LON = -180;
 var MIN_LON = 180;
-var MAX_RADIUS_KM = 100;
+var MAX_RADIUS_KM = 50;
 var MIN_RADIUS_KM = 5;
 
 var supportedYears = ["2015", "2016", "2017", "2018", "2018"];
@@ -31,18 +31,21 @@ function distanceBetween(lat1, lon1, lat2, lon2) {
   var rLat = deg2rad(lat2-lat1);
   var rLon = deg2rad(lon2-lon1); 
 
-  var a =  Math.sin(rLat/2) * Math.sin(rLat/2) +
+  var a =  Math.sin(rLat/2.0) * Math.sin(rLat/2.0) +
     Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(rLon/2) * Math.sin(rLon/2);
+    Math.sin(rLon/2.0) * Math.sin(rLon/2.0);
 
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
 
   var d = EARTH_RADIUS_KM * c;
+
+ 	console.log('QUERY', "distance: " + d);
+
   return d;
 }
 
 function deg2rad(deg) {
-  return deg * (Math.PI/180)
+  return deg * (Math.PI/180.0)
 }
 
 apiV1.get('/data', (request, response) => {
@@ -51,7 +54,7 @@ apiV1.get('/data', (request, response) => {
 	// VERIFY API KEY
 	var apiKey = request.header(auth.headerApiKey);
 	if (!auth.isApiKeyValid(apiKey)) {
-		common.sendError(response, 401, "401.001", "Unauthorized or missing api-key. Please contact threedee.mobile@gmail.com to obtain an API key")
+		common.sendError(response, 401, "401.001", "Unauthorized or missing api-key. Please contact threedee.mobile@gmail.com to obtain an API key");
 	} else {
 		// QUERY PARAMETERS
 		var yearParam = -1;
@@ -70,7 +73,7 @@ apiV1.get('/data', (request, response) => {
 			yearParam = parseInt(request.query.year);
 		} else {
 			isQueryValid = false;
-			common.sendError(response, 400, "400.001", "Invalid query: year (int) is required and must be " + MIN_YEAR + " <= year <= " + MAX_YEAR)
+			common.sendError(response, 400, "400.001", "Invalid query: year (int) is required and must be " + MIN_YEAR + " <= year <= " + MAX_YEAR);
 			return;
 		}
 
@@ -78,7 +81,7 @@ apiV1.get('/data', (request, response) => {
 			monthParam = request.query.month;
 		} else {
 			isQueryValid = false;
-			common.sendError(response, 400, "400.002", "Invalid query: month (str) is required and must be the proper name, all lowercase")
+			common.sendError(response, 400, "400.002", "Invalid query: month (str) is required and must be the proper name, all lowercase");
 			return;
 		}
 
@@ -88,41 +91,28 @@ apiV1.get('/data', (request, response) => {
 				radiusParam = r;
 			} else {
 				isQueryValid = false;
-				common.sendError(response, 400, "400.003", "Invalid query: radius (km) is optional and must be " + MIN_RADIUS_KM + " <= radius <= " + MAX_RADIUS_KM)
+				common.sendError(response, 400, "400.003", "Invalid query: radius (km) is optional and must be " + MIN_RADIUS_KM + " <= radius <= " + MAX_RADIUS_KM);
 			}
 		}
 
-		if (typeof request.query.latitude !== "undefined") {
-			if (request.query.latitude >= MIN_LAT && request.query.latitude <= MAX_LAT) {
-				latParam = request.query.latitude;
-			} else {
-				isQueryValid = false;
-				common.sendError(response, 400, "400.004", "Invalid query: latitude (degrees) must be " + MIN_LAT + " <= latitude <= " + MAX_LAT)
-			}
+		if (typeof request.query.latitude !== "undefined" && request.query.latitude >= MIN_LAT && request.query.latitude <= MAX_LAT) {
+			latParam = request.query.latitude;
+		} else {
+			isQueryValid = false;
+			common.sendError(response, 400, "400.004", "Invalid query: latitude (degrees) is required and must be " + MIN_LAT + " <= latitude <= " + MAX_LAT);
 		}
 
-		if (typeof request.query.longitude !== "undefined") {
-			if (request.query.longitude >= MIN_LAT && request.query.longitude <= MAX_LAT) {
-				lonParam = request.query.longitude;
-			} else {
-				isQueryValid = false;
-				common.sendError(response, 400, "400.005", "Invalid query: longitude (degrees) must be " + MIN_LAT + " <= longitude <= " + MAX_LAT)
-			}
+		if (typeof request.query.longitude !== "undefined" && request.query.longitude >= MIN_LAT && request.query.longitude <= MAX_LAT) {
+			lonParam = request.query.longitude;
+		} else {
+			isQueryValid = false;
+			common.sendError(response, 400, "400.005", "Invalid query: longitude (degrees) is required must be " + MIN_LAT + " <= longitude <= " + MAX_LAT);
 		}
-
-		if (lonParam !== Number.MIN_SAFE_INTEGER && latParam === Number.MIN_SAFE_INTEGER) {
-				isQueryValid = false;
-				common.sendError(response, 400, "400.006", "Invalid query: latitude is required if longitude is provided")
-		}
-
-		if (latParam !== Number.MIN_SAFE_INTEGER && lonParam === Number.MIN_SAFE_INTEGER) {
-				isQueryValid = false;
-				common.sendError(response, 400, "400.007", "Invalid query: longitude is required if latitude is provided")
-		}
+		
 
 		if (!regions.isSupportedRegion(latParam, lonParam)) {
 				isQueryValid = false;
-				common.sendError(response, 422, "422.001", "The provided latitude and longitude does not fall within a supported region")
+				common.sendError(response, 422, "422.001", "The provided latitude and longitude does not fall within a supported region");
 		}
 
 		if (isQueryValid) {
@@ -131,48 +121,39 @@ apiV1.get('/data', (request, response) => {
 			.once("value", function(snapshot1) {
 				var data = snapshot1.val();
 
-				var result = {};
-				var foundMatch = false;
+				var result = {
+					"data": []
+				};
 
 				try {
+					var cells = [];
 					data.forEach((item) => {
 						var year = item.year;
-						if (!foundMatch && yearParam === year) {
+						if (yearParam === year) {
 							item.monthlyData.forEach((monthItem) => {
 								var month = monthItem.month;
 								if (monthParam === month) {
-										foundMatch = true;
-										if (latParam === -1 && lonParam === -1) {
-											// no lat/lon provided, return all cells for this month/year
-											result = {
-												"data": monthItem.cells
-											};
-										} else {
-											// only return the nearby cells
-											var cells = [];
-											monthItem.cells.forEach((cell) => {
-												if (radiusParam > distanceBetween(latParam, lonParam, cell.lat, cell.lon)) {
-													cells.push(cell);
-												}
-											});
-
-											result = {
-												"data": cells
-											};
-										}							  
+									monthItem.cells.forEach((cell) => {
+										if (radiusParam > distanceBetween(latParam, lonParam, cell.lat, cell.lon)) {
+											cells.push(cell);
+										}
+									});
 								}
 							});
 						}
 					});
+
+					result.data = cells;
+
 				} catch(error) {
 					console.log('ERROR', "Error occurred: " + error);
-					common.sendError(response, 500, "500.002", "Internal error")
+					common.sendError(response, 500, "500.001", "Internal error")
 				}
 			
 				common.sendSuccess(response, result);
 			}, 
 			function (error) {
-					common.sendError(response, 500, "500.001", "Internal connection error")
+					common.sendError(response, 500, "500.002", "Internal connection error")
 		  });
 		}
 	}
