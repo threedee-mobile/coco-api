@@ -21,8 +21,8 @@ var MAX_LAT = 90.0;
 var MIN_LAT = -90.0;
 var MAX_LON = -180;
 var MIN_LON = 180;
-var MAX_RADIUS_KM = 100;
-var MIN_RADIUS_KM = 10;
+var MAX_RADIUS_KM = 1000;
+var MIN_RADIUS_KM = 100;
 
 var supportedYears = ["2015", "2016", "2017", "2018", "2018"];
 var supportedMonths = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "november", "december"];
@@ -77,12 +77,13 @@ apiV1.get('/data', (request, response) => {
 			return;
 		}
 
-		if (typeof request.query.month !== "undefined" && supportedMonths.includes(request.query.month)) {
-			monthParam = request.query.month;
-		} else {
-			isQueryValid = false;
-			common.sendError(response, 400, "400.002", "Invalid query: month (str) is required and must be the proper name, all lowercase");
-			return;
+		if (typeof request.query.month !== "undefined") {
+			var m = request.query.month;
+			if (supportedMonths.includes(m)) {
+				monthParam = m;
+			} else {
+				common.sendError(response, 400, "400.002", "Invalid query: month (str) is optional and must be the proper name, all lowercase");
+			}
 		}
 
 		if (typeof request.query.radius !== "undefined") {
@@ -108,7 +109,6 @@ apiV1.get('/data', (request, response) => {
 			isQueryValid = false;
 			common.sendError(response, 400, "400.005", "Invalid query: longitude (degrees) is required must be " + MIN_LAT + " <= longitude <= " + MAX_LAT);
 		}
-		
 
 		if (!regions.isSupportedRegion(latParam, lonParam)) {
 				isQueryValid = false;
@@ -121,29 +121,53 @@ apiV1.get('/data', (request, response) => {
 			.once("value", function(snapshot1) {
 				var data = snapshot1.val();
 
-				var result = {
-					"data": []
-				};
+				var result = {};
 
 				try {
-					var cells = [];
-					data.forEach((item) => {
+					var monthlyData = [];
+
+					yearLabel:
+					for (item of data) {
 						var year = item.year;
 						if (yearParam === year) {
-							item.monthlyData.forEach((monthItem) => {
+							monthLabel:
+							for (monthItem of item.monthlyData) {
 								var month = monthItem.month;
-								if (monthParam === month) {
+								var monthIndex = supportedMonths.indexOf(month);
+								var monthData = {
+									"month": month,
+									"monthIndex": monthIndex
+								};
+								var cells = [];
+
+								if (monthParam !== "") {
+									// month supplied; filter only for specified month
+									if (monthParam === month) {
+										monthItem.cells.forEach((cell) => {
+											if (radiusParam > distanceBetween(latParam, lonParam, cell.lat, cell.lon)) {
+												cells.push(cell);
+											}
+										});
+										monthData.cells = cells;
+										monthlyData.push(monthData);
+										break monthLabel;
+									}
+								} else {
+									// add all cells from each month
 									monthItem.cells.forEach((cell) => {
 										if (radiusParam > distanceBetween(latParam, lonParam, cell.lat, cell.lon)) {
 											cells.push(cell);
 										}
 									});
+									monthData.cells = cells;
+									monthlyData.push(monthData);
 								}
-							});
+							}
+							break yearLabel;
 						}
-					});
+					}
 
-					result.data = cells;
+					result.data = monthlyData;
 
 				} catch(error) {
 					console.log('ERROR', "Error occurred: " + error);
